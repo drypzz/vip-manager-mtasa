@@ -1,0 +1,22 @@
+<meta>
+    <info author="drypzz" name="VIP Manager" version="1.0.0" />
+
+    <script src="mainG.lua" type="shared" cache="false" />
+
+    <script src="src/mainC.lua" type="client" cache="false" />
+    <script src="src/mainS.lua" type="server" cache="false" />
+
+    <script src="src/utils/mainU.lua" type="shared" cache="false" />
+
+    <file src="src/db/database.db" />
+
+    <file src="assets/font/sans.ttf" />
+
+    <file src="assets/sfx/still_dre.mp3" />
+    <file src="assets/sfx/snoop_dogg.mp3" />
+    <file src="assets/sfx/gtasa_Instrumental.mp3" />
+
+    <export function="getTimeVip" type="server" />
+    <export function="getDateLimitVip" type="server" />
+    <export function="getTypeVip" type="server" />
+</meta>
