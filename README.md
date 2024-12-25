@@ -1,7 +1,7 @@
 # Sistema de Gerenciamento de VIP
 
-author: [@drypzz](https://github.com/drypzz)
-version: 1.1.0
+- author: [@drypzz](https://github.com/drypzz)
+- version: 1.1.0
 
 
 ## 🚀 Tecnologias
@@ -14,12 +14,21 @@ Esse projeto foi desenvolvido com as seguintes tecnologias:
 
 Esse projeto conta com 3 funções exportadas para serem utilizadas em qualquer outro resource
 
-- getTimeVip(player)
-    `return: "00 Dias e 00 Horas - 00 Min"`
-- getDateLimitVip(player)
-    `return: "00/00/0000"`
-- getTypeVip(player)
-    `return: "Nome do VIP"`
+- getTimeVip(player)<br>
+    ```lua
+    -- @param player: Elemento do Jogador
+    -- @return: "00 Dias e 00 Horas - 00 Min"
+    ```
+- getDateLimitVip(player)<br>
+    ```lua
+    -- @param player: Elemento do Jogador
+    -- @return: "00/00/0000"
+    ```
+- getTypeVip(player)<br>
+    ```lua
+    -- @param player: Elemento do Jogador
+    -- @return: "Nome do VIP"
+    ```
 
 ## 🗿🍷 Arquivo de configuração:
 
