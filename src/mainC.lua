@@ -114,6 +114,8 @@ function createPanel()
         DGS:dgsSetProperty(vipDaysInput, "placeHolderFont", sansFont)
         DGS:dgsEditSetMaxLength(vipDaysInput, 3)
 
+        -- Dropdown de tipos de VIP
+
         local vipTypeSelect = DGS:dgsCreateComboBox(x * 400, y * 280, x * 170, x * 40, "Tipo", false, addTab)
         DGS:dgsSetFont(vipTypeSelect, sansFont)
         DGS:dgsSetProperty(vipTypeSelect, "itemHeight", y * 30)
@@ -128,6 +130,8 @@ function createPanel()
         if count >= 3 then
             DGS:dgsComboBoxSetViewCount(vipTypeSelect, 2)
         end
+
+        -- Textarea de logs
 
         logTextArea = DGS:dgsCreateMemo(x * 10, y * 10, x * 558, y * 250, "", false, logTab)
         DGS:dgsSetProperty(logTextArea, "font", sansFont)

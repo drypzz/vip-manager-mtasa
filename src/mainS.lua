@@ -14,7 +14,6 @@
 local action = false;
 
 
-
 --> database
 
 local db = dbConnect("sqlite", "src/db/database.db")
@@ -110,10 +109,10 @@ fetchOnlinePlayers = function()
     for _, player in ipairs(getElementsByType("player")) do
         
         if getPlayerAccount(player) and not isGuestAccount(getPlayerAccount(player)) then
-            local result = dbPoll(dbQuery(db, "SELECT * FROM vip WHERE id=?", getElementData(player, tostring(config.id_elementData)) or 0), -1)
+            local result = dbPoll(dbQuery(db, "SELECT * FROM vip WHERE id=?", getElementData(player, tostring(config.id_elementData)) or getAccountID(getPlayerAccount(player))), -1)
             
             table.insert(players, { 
-                id = (getElementData(player, tostring(config.id_elementData)) or 0),
+                id = (getElementData(player, tostring(config.id_elementData)) or getAccountID(getPlayerAccount(player))),
                 name = getPlayerName(player),
                 vip = result and #result > 0 and "true" or "false"
             })
@@ -122,7 +121,7 @@ fetchOnlinePlayers = function()
                 iprint(
                     "onlinePlayers",
                     {
-                        id = (getElementData(player, tostring(config.id_elementData)) or 0),
+                        id = (getElementData(player, tostring(config.id_elementData)) or getAccountID(getPlayerAccount(player))),
                         name = getPlayerName(player),
                         vip = result and #result > 0 and "true" or "false"
                     }
@@ -196,7 +195,7 @@ addCommandHandler(tostring(config.manager.cmd_salary), function(player)
         return
     end
 
-    local vipID = (getElementData(player, tostring(config.id_elementData)) or 0)
+    local vipID = (getElementData(player, tostring(config.id_elementData)) or getAccountID(getPlayerAccount(player)))
     local query = dbQuery(db, "SELECT * FROM vip WHERE id = ?", vipID)
     if not query then
         outputChatBox("* Erro ao consultar VIP no banco de dados!", player, 255, 0, 0)
@@ -219,7 +218,6 @@ addCommandHandler(tostring(config.manager.cmd_salary), function(player)
         outputChatBox("* Você já resgatou seu salário recentemente!", player, 255, 0, 0)
         return
     end
-
     
     local bonus = tonumber(config.manager.vips[vip.type].salary)
 
@@ -228,7 +226,7 @@ addCommandHandler(tostring(config.manager.cmd_salary), function(player)
             "salaryRescued",
             {
                 id = vipID,
-                name = removeHex(getPlayerName(player)) .. "[" .. (getElementData(player, tostring(config.id_elementData)) or 0) .. "]",
+                name = removeHex(getPlayerName(player)) .. "[" .. (getElementData(player, tostring(config.id_elementData)) or getAccountID(getPlayerAccount(player))) .. "]",
                 bonus = bonus,
                 type = vip.type
             }
@@ -236,14 +234,13 @@ addCommandHandler(tostring(config.manager.cmd_salary), function(player)
     end
 
     setPlayerMoney(player, getPlayerMoney(player) + bonus)
-    salary[vip.id] = (getElementData(player, tostring(config.id_elementData)) or 0)
+    salary[vip.id] = (getElementData(player, tostring(config.id_elementData)) or getAccountID(getPlayerAccount(player)))
     setTimer(function()
         salary[vip.id] = nil
     end, tonumber(config.manager.hours_salary) * 3600000, 1)
 
     outputChatBox("* Você resgatou seu salário de $" .. formatNumber(bonus) .. " como " .. vip.type, player, 0, 255, 0)
-    addLog("O(A) " .. removeHex(getPlayerName(player)) .. "[" .. (getElementData(player, tostring(config.id_elementData)) or 0) .. "] resgatou o salário VIP de $" .. formatNumber(bonus) .. " sendo um VIP [" .. vip.type .. "].")
-
+    addLog("O(A) " .. removeHex(getPlayerName(player)) .. "[" .. (getElementData(player, tostring(config.id_elementData)) or getAccountID(getPlayerAccount(player))) .. "] resgatou o salário VIP de $" .. formatNumber(bonus) .. " sendo um VIP [" .. vip.type .. "].")
 
 end)
 
@@ -285,12 +282,12 @@ addVip = function(id, playerName, days, vipType)
                     days = days,
                     acc = acc,
                     type = vipType,
-                    staff = removeHex(getPlayerName(source)) .. "[" .. (getElementData(source, tostring(config.id_elementData)) or 0) .. "]"
+                    staff = removeHex(getPlayerName(source)) .. "[" .. (getElementData(source, tostring(config.id_elementData)) or getAccountID(getPlayerAccount(source))) .. "]"
                 }
             )
         end
 
-        dbExec(db, "INSERT INTO vip (id, name, days, active, type, account, staff, dateLimit, date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", id, removeHex(playerName), futureDate, 1, vipType, acc, removeHex(getPlayerName(source)).."[" .. (getElementData(source, tostring(config.id_elementData)) or 0) .. "]", limit, os.date("%d/%m/%Y"))
+        dbExec(db, "INSERT INTO vip (id, name, days, active, type, account, staff, dateLimit, date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", id, removeHex(playerName), futureDate, 1, vipType, acc, removeHex(getPlayerName(source)).."[" .. (getElementData(source, tostring(config.id_elementData)) or getAccountID(getPlayerAccount(source))) .. "]", limit, os.date("%d/%m/%Y"))
         aclGroupAddObject(aclGetGroup(tostring(vipType)), "user."..acc)
 
         sendDynamicMessageToAll(string.format(config.infoDx.textsToAllPlayers["addedVip"], removeHex(playerName), id, vipType), { isRainbow = true })
@@ -303,7 +300,7 @@ addVip = function(id, playerName, days, vipType)
         outputChatBox("* Voce recebeu um bonus pela ativação do " .. vipType .. " !", getPlayerFromName(playerName), 0, 255, 0)
         setPlayerMoney(getPlayerFromName(playerName), getPlayerMoney(getPlayerFromName(playerName)) + config.manager.vips[vipType].bonus)
         
-        addLog("O(A) " .. removeHex(getPlayerName(source)) .. "[" .. (getElementData(source, tostring(config.id_elementData)) or 0) .. "] ativou o [" .. vipType .. "] para " .. removeHex(getPlayerName(getPlayerFromName(playerName))) .. "[" .. (getElementData(getPlayerFromName(playerName), tostring(config.id_elementData)) or 0) .. "] por " .. days .. " dias.")
+        addLog("O(A) " .. removeHex(getPlayerName(source)) .. "[" .. (getElementData(source, tostring(config.id_elementData)) or getAccountID(getPlayerAccount(source))) .. "] ativou o [" .. vipType .. "] para " .. removeHex(getPlayerName(getPlayerFromName(playerName))) .. "[" .. (getElementData(getPlayerFromName(playerName), tostring(config.id_elementData)) or getAccountID(getPlayerAccount(getPlayerFromName(playerName)))) .. "] por " .. days .. " dias.")
         triggerEvent("loadLog", root, source)
 
         
@@ -339,14 +336,14 @@ removeVip = function(id)
                     name = removeHex(playerName),
                     acc = acc,
                     type = vipType,
-                    staff = removeHex(getPlayerName(source)) .. "[" .. (getElementData(source, tostring(config.id_elementData)) or 0) .. "]"
+                    staff = removeHex(getPlayerName(source)) .. "[" .. (getElementData(source, tostring(config.id_elementData)) or getAccountID(getPlayerAccount(source))) .. "]"
                 }
             )
         end
 
         outputChatBox("* VIP removido com sucesso", source, 0, 255, 0)
         aclGroupRemoveObject(aclGetGroup(tostring(vipType)), "user."..acc)
-        addLog("O(A) " .. removeHex(getPlayerName(source)) .. "[" .. (getElementData(source, tostring(config.id_elementData)) or 0) .. "] removeu o [" .. vipType .. "] de " .. removeHex(playerName) .. "[" .. id .. "]." )
+        addLog("O(A) " .. removeHex(getPlayerName(source)) .. "[" .. (getElementData(source, tostring(config.id_elementData)) or getAccountID(getPlayerAccount(source))) .. "] removeu o [" .. vipType .. "] de " .. removeHex(playerName) .. "[" .. id .. "]." )
         
         if player then
             outputChatBox("* O seu VIP foi removido!", player, 255, 0, 0)
@@ -405,7 +402,7 @@ renewVip = function(id, playerName, days, vipType)
                     days = days,
                     type = vipType,
                     acc = acc,
-                    staff = removeHex(getPlayerName(source)) .. "[" .. (getElementData(source, tostring(config.id_elementData)) or 0) .. "]"
+                    staff = removeHex(getPlayerName(source)) .. "[" .. (getElementData(source, tostring(config.id_elementData)) or getAccountID(getPlayerAccount(source))) .. "]"
                 }
             )
         end
@@ -431,9 +428,9 @@ renewVip = function(id, playerName, days, vipType)
         end
         
         if vipType == vip.type then
-            addLog("O(A) " .. removeHex(getPlayerName(source)) .. "[" .. (getElementData(source, tostring(config.id_elementData)) or 0) .. "] renovou o [" .. vipType .. "] de " .. removeHex(playerName) .. "[" .. id .. "] por " .. days .. " dias.")
+            addLog("O(A) " .. removeHex(getPlayerName(source)) .. "[" .. (getElementData(source, tostring(config.id_elementData)) or getAccountID(getPlayerAccount(source))) .. "] renovou o [" .. vipType .. "] de " .. removeHex(playerName) .. "[" .. id .. "] por " .. days .. " dias.")
         else
-            addLog("O(A) " .. removeHex(getPlayerName(source)) .. "[" .. (getElementData(source, tostring(config.id_elementData)) or 0) .. "] alterou o [" .. vip.type .. "] de " .. removeHex(playerName) .. "[" .. id .. "] para " .. vipType .. " por " .. days .. " dias.")
+            addLog("O(A) " .. removeHex(getPlayerName(source)) .. "[" .. (getElementData(source, tostring(config.id_elementData)) or getAccountID(getPlayerAccount(source))) .. "] alterou o [" .. vip.type .. "] de " .. removeHex(playerName) .. "[" .. id .. "] para " .. vipType .. " por " .. days .. " dias.")
         end
 
 
@@ -453,7 +450,7 @@ getInfoMember = function(id)
         local days = calculateDaysDifference(result[1].days)
         return triggerClientEvent(source, "showRenewPanel", source, result[1].id, result[1].name, result[1].type, days)
     else
-        return triggerClientEvent(source, "showRenewPanel", source, "0", "drypzz", "Dev")
+        return triggerClientEvent(source, "showRenewPanel", source, "047", "drypzz", "dev")
     end
 end
 
@@ -508,7 +505,7 @@ addCommandHandler(tostring(config.giveaway.cmd_create), function(player, cmd, nu
             days = tonumber(days),
             type = type,
             owner = removeHex(getPlayerName(player)),
-            ownerID = getElementData(player, tostring(config.id_elementData)) or 0,
+            ownerID = getElementData(player, tostring(config.id_elementData)) or getAccountID(getPlayerAccount(player)),
             event = true
         }
 
@@ -532,27 +529,27 @@ addCommandHandler(tostring(config.giveaway.cmd_create), function(player, cmd, nu
         end, ((tonumber(config.giveaway.timer_giveaway) - 10) * 1000), 1)
 
         setTimer(function()
-            sendDynamicMessageToAll("* Sorteando VIP em 5...", { color1 = 255, color2 = 255, color3 = 0 })
+            sendDynamicMessageToAll("* Sorteando VIP em\n5...", { color1 = 255, color2 = 255, color3 = 0 })
             playSoundFrontEnd(root, 5)
         end, ((tonumber(config.giveaway.timer_giveaway) - 5) * 1000), 1)
 
         setTimer(function()
-            sendDynamicMessageToAll("* Sorteando VIP em 4...", { color1 = 255, color2 = 255, color3 = 0 })
+            sendDynamicMessageToAll("* Sorteando VIP em\n4...", { color1 = 255, color2 = 255, color3 = 0 })
             playSoundFrontEnd(root, 5)
         end, ((tonumber(config.giveaway.timer_giveaway) - 4) * 1000), 1)
 
         setTimer(function()
-            sendDynamicMessageToAll("* Sorteando VIP em 3...", { color1 = 255, color2 = 255, color3 = 0 })
+            sendDynamicMessageToAll("* Sorteando VIP em\n3...", { color1 = 255, color2 = 255, color3 = 0 })
             playSoundFrontEnd(root, 5)
         end, ((tonumber(config.giveaway.timer_giveaway) - 3) * 1000), 1)
 
         setTimer(function()
-            sendDynamicMessageToAll("* Sorteando VIP em 2...", { color1 = 255, color2 = 255, color3 = 0 })
+            sendDynamicMessageToAll("* Sorteando VIP em\n2...", { color1 = 255, color2 = 255, color3 = 0 })
             playSoundFrontEnd(root, 5)
         end, ((tonumber(config.giveaway.timer_giveaway) - 2) * 1000), 1)
 
         setTimer(function()
-            sendDynamicMessageToAll("* Sorteando VIP em 1...", { color1 = 255, color2 = 255, color3 = 0 })
+            sendDynamicMessageToAll("* Sorteando VIP em\n1...", { color1 = 255, color2 = 255, color3 = 0 })
             playSoundFrontEnd(root, 5)
         end, ((tonumber(config.giveaway.timer_giveaway) - 1) * 1000), 1)
 
@@ -635,7 +632,7 @@ addCommandHandler(config.giveaway.show_giveaway, function(player)
 end)
 
 addCommandHandler(tostring(config.giveaway.cmd_join), function(player)
-    local result = dbPoll(dbQuery(db, "SELECT * FROM vip WHERE id=?", getElementData(player, tostring(config.id_elementData)) or 0), -1)
+    local result = dbPoll(dbQuery(db, "SELECT * FROM vip WHERE id=?", getElementData(player, tostring(config.id_elementData)) or getAccountID(getPlayerAccount(player))), -1)
 
     if isGuestAccount(getPlayerAccount(player)) then
         return
@@ -664,7 +661,7 @@ addCommandHandler(tostring(config.giveaway.cmd_join), function(player)
     end
 
     triggerClientEvent(player, "showGiveawayPanel", player, {
-        id = getElementData(player, tostring(config.id_elementData)) or 0,
+        id = getElementData(player, tostring(config.id_elementData)) or getAccountID(getPlayerAccount(player)),
         name = getPlayerName(player),
         acc = getPlayerAccount(player) and getAccountName(getPlayerAccount(player)) or "none",
         type = giveaway.event.type,
