@@ -114,7 +114,7 @@ fetchOnlinePlayers = function()
             table.insert(players, { 
                 id = (getElementData(player, tostring(config.id_elementData)) or getAccountID(getPlayerAccount(player))),
                 name = getPlayerName(player),
-                vip = result and #result > 0 and "true" or "false"
+                vip = result and #result > 0 and (result[1].active == 1 and "true" or "false")
             })
 
             if config.debuggingEnabled then
@@ -123,7 +123,7 @@ fetchOnlinePlayers = function()
                     {
                         id = (getElementData(player, tostring(config.id_elementData)) or getAccountID(getPlayerAccount(player))),
                         name = getPlayerName(player),
-                        vip = result and #result > 0 and "true" or "false"
+                        vip = result and #result > 0 and (result[1].active == 1 and "true" or "false")
                     }
                 )
             end
@@ -134,7 +134,7 @@ fetchOnlinePlayers = function()
 end
 
 validateVipDays = function()
-    local query = dbQuery(db, "SELECT * FROM vip WHERE active = 1")
+    local query = dbQuery(db, "SELECT * FROM vip")
     if not query then
         print("[GERENCIADOR VIP] - Erro ao executar consulta para validar VIPs!")
         return
@@ -163,9 +163,29 @@ validateVipDays = function()
             return
         end
 
-        if currentTime >= expirationTime then
+        if currentTime >= expirationTime and vip.active == 1 then
             dbExec(db, "UPDATE vip SET active = 0 WHERE id = ?", vip.id)
-            aclGroupRemoveObject(aclGetGroup(tostring(vip.type)), "user." .. vip.account)
+            
+            local aclGroup = aclGetGroup(tostring(vip.type))
+            if aclGroup then
+                local objects = aclGroupListObjects(aclGroup)
+                local isInAcl = false
+
+                for _, object in ipairs(objects) do
+                    if object == "user." .. vip.account then
+                        isInAcl = true
+                        break
+                    end
+                end
+
+                if isInAcl then
+                    aclGroupRemoveObject(aclGroup, "user." .. vip.account)
+                else
+                    print("[GERENCIADOR VIP] - O jogador " .. removeHex(vip.name) .. " não está na ACL [" .. tostring(vip.type) .. "] portanto, não foi removido.")
+                end
+            else
+                print("[GERENCIADOR VIP] - ACL [" .. tostring(vip.type) .. "] não encontrada.")
+            end
 
             addLog("O VIP [" .. vip.type .. "] de " .. vip.name .. "[" .. vip.id .. "] expirou.")
 
@@ -174,13 +194,13 @@ validateVipDays = function()
                 outputChatBox("* O seu VIP expirou!", player, 255, 0, 0)
             end
         end
-
     end
 
     fetchVipList()
 end
 
 setTimer(validateVipDays, 60000, 0)
+
 
 
 
@@ -261,7 +281,15 @@ end
 addVip = function(id, playerName, days, vipType)
     local result = dbPoll(dbQuery(db, "SELECT * FROM vip WHERE id=?", id), -1)
     if result and #result > 0 then
-        outputChatBox("* O jogador selecionado já possui um VIP ativo!", source, 255, 0, 0)
+        local active = result[1].active
+        if active == 1 then
+            outputChatBox("* O jogador selecionado já possui um VIP ativo!", source, 255, 0, 0)
+            return
+        elseif active == 0 then
+            outputChatBox("* O jogador selecionado possui um VIP inativo!", source, 255, 0, 0)
+            outputChatBox("* Renove o VIP do mesmo utilizando o botao de Renovar!", source, 255, 0, 0)
+            return
+        end
     else
 
         if action then
@@ -411,7 +439,7 @@ renewVip = function(id, playerName, days, vipType)
         aclGroupRemoveObject(aclGetGroup(tostring(vip.type)), "user."..acc)
         aclGroupAddObject(aclGetGroup(tostring(vipType)), "user."..acc)
 
-        if vipType == vip.type and calculateDaysDifference(vip.days) >= 1 then
+        if vipType == vip.type and (calculateDaysDifference(vip.days) >= 1 or days >= 1) then
             sendDynamicMessageToAll(string.format(config.infoDx.textsToAllPlayers["renewVip"], removeHex(playerName), id), { isRainbow = true })
         end
 
@@ -426,6 +454,8 @@ renewVip = function(id, playerName, days, vipType)
         if player then
             outputChatBox("* Seu VIP foi renovado por " .. days .. " dias!", player, 0, 255, 0)
         end
+
+        outputChatBox("* VIP renovado com sucesso", source, 0, 255, 0)
         
         if vipType == vip.type then
             addLog("O(A) " .. removeHex(getPlayerName(source)) .. "[" .. (getElementData(source, tostring(config.id_elementData)) or getAccountID(getPlayerAccount(source))) .. "] renovou o [" .. vipType .. "] de " .. removeHex(playerName) .. "[" .. id .. "] por " .. days .. " dias.")

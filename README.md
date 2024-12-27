@@ -1,7 +1,7 @@
 # Sistema de Gerenciamento de VIP
 
 - author: [@drypzz](https://github.com/drypzz)
-- version: 1.1.4
+- version: 1.1.5
 
 
 ## ⚠️ Observação Importante !
